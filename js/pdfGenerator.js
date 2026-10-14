@@ -225,23 +225,25 @@ async function generatePdf(data, jsPDF) {
     });
   }
 
-  // Honors & Awards (all)
+  // Honors & Awards — repeat awards are grouped by title + organization,
+  // with a compact history of every recognition date.
   const awards = (data.honors && data.honors.awards) || [];
-  if (awards.length) {
+  const honorGroups = window.PdfUtils.groupHonorsForPdf(awards);
+  if (honorGroups.length) {
     mainLabel((data.honors && data.honors.title) || 'Honors & Awards');
-    awards.forEach(a => {
+    honorGroups.forEach((group, groupIndex) => {
       font(9.5, 'bold'); doc.setTextColor(TEXT);
-      doc.text(a.title, MX, my);
+      doc.text(group.title, MX, my);
       font(8.5, 'normal'); doc.setTextColor(MUTE);
-      doc.text(`${a.organization} · ${a.date}`, MX + MW, my, { align: 'right' });
-      my += mm(9.5, 1.5);
-    });
-  }
+      doc.text(group.organization, MX + MW, my, { align: 'right' });
+      my += mm(9.5, 1.35);
 
-  // Footer link
-  if (data.profile.website) {
-    font(8.5, 'bold'); doc.setTextColor(TEAL);
-    doc.text(data.profile.website, MX, H - 12);
+      mainText(window.PdfUtils.formatHonorDatesForPdf(group.awards), {
+        size: 8.2, color: MUTE, lh: 1.2, gap: 0.8
+      });
+
+      if (groupIndex < honorGroups.length - 1) my += 1;
+    });
   }
 
   doc.save(`${String(data.profile.name || 'CV').replace(/\s+/g, '_')}_CV.pdf`);
